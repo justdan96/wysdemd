@@ -1,0 +1,150 @@
+#!/bin/python
+
+boot_targets = new Tree()
+boot_targets.add(default_target)
+
+all_boot_targets = new Set()
+all_boot_targets.add(default_target)
+
+boot_services = new Set()
+
+process_targets(default_target)
+
+topological_sort(boot_services)
+
+def process_targets(target):
+   requires = read_require_fields_from_target_file(target)
+   for reqtar in requires:
+      # add a sub-leaf "reqtar" to leaf "target" 
+      boot_targets.add(target.reqtar)
+      if reqtar not in all_boot_targets:
+         all_boot_targets.add(reqtar)
+         process_targets(target + '.' + reqtar)
+   
+   wants = read_wants_from_target(target)
+   for wantar in wants:
+      process_services(wantar)
+
+def process_services(service):
+   reqs = read_require_fields_from_service_file(service)
+   for reqser in reqs:
+      # service = 'display-manager'
+      # reqser = ['systemd-user-sessions.service', 'getty@tty1.service', 'plymouth-quit.service', 'livesys-late.service']
+      process_services(reqser)
+   if service not in boot_services:
+      boot_services.add(service, reqs)
+   
+
+boot_targets.print()
+
+"  0 graphical
+      1 multi-user
+          2 basic
+              3 paths
+              3 slices
+              3 sysinit
+                  4 local-fs
+                      5 local-fs-pre
+                  4 swap
+              3 sockets
+              3 timers"
+
+# enabled service:
+# ln -s '/usr/lib/systemd/system/vsftpd.service' '/etc/systemd/system/multi-user.target.wants/vsftpd.service'
+
+# systemctl show -p "Wants" --plain -l --no-pager multi-user.target | sed 's/Wants=//g' | sed 's/ /\n/g' | sort
+
+"atd.service
+auditd.service
+avahi-daemon.service
+chronyd.service
+crond.service
+cups.path
+dbus.service
+getty.target
+irqbalance.service
+jexec.service
+livesys-late.service
+livesys.service
+mcelog.service
+mdmonitor.service
+NetworkManager-dispatcher.service
+NetworkManager.service
+ntpdate.service
+plymouth-quit.service
+plymouth-quit-wait.service
+remote-fs.target
+rngd.service
+rpcbind.service
+rsyslog.service
+sendmail.service
+smartd.service
+sm-client.service
+systemd-ask-password-wall.path
+systemd-logind.service
+systemd-update-utmp-runlevel.service
+systemd-user-sessions.service
+vmtoolsd.service"
+
+# systemd-analyze blame --no-pager | awk '/\.service/ {print $2}' | sort
+
+"accounts-daemon.service
+auditd.service
+avahi-daemon.service
+bluetooth.service
+chronyd.service
+colord.service
+dmraid-activation.service
+dnf-makecache.service
+fedora-import-state.service
+fedora-readonly.service
+firewalld.service
+jexec.service
+kmod-static-nodes.service
+lightdm.service
+livesys-late.service
+livesys.service
+lvm2-monitor.service
+lvm2-pvscan@8:3.service
+mcelog.service
+NetworkManager-dispatcher.service
+NetworkManager.service
+ntpdate.service
+plymouth-quit.service
+plymouth-quit-wait.service
+plymouth-read-write.service
+plymouth-start.service
+polkit.service
+rpcbind.service
+rsyslog.service
+rtkit-daemon.service
+sendmail.service
+sm-client.service
+systemd-backlight@backlight:intel_backlight.service
+systemd-fsck@dev-disk-by\x2duuid-ad62b4e3\x2d713e\x2d46e7\x2d9ac1\x2d0db34b42375f.service
+systemd-fsck@dev-mapper-fedora\x2dhome.service
+systemd-fsck-root.service
+systemd-journal-flush.service
+systemd-logind.service
+systemd-random-seed.service
+systemd-readahead-collect.service
+systemd-readahead-done.service
+systemd-readahead-replay.service
+systemd-remount-fs.service
+systemd-sysctl.service
+systemd-tmpfiles-clean.service
+systemd-tmpfiles-setup-dev.service
+systemd-tmpfiles-setup.service
+systemd-udevd.service
+systemd-udev-settle.service
+systemd-udev-trigger.service
+systemd-update-utmp-runlevel.service
+systemd-update-utmp.service
+systemd-user-sessions.service
+systemd-vconsole-setup.service
+udisks2.service
+upower.service
+user@0.service
+user@1000.service
+user@995.service
+wpa_supplicant.service"
