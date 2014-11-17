@@ -44,9 +44,16 @@ cp -r /boot/grub2/grub.cfg /boot/grub2/grub.cfg.bak
 
 echo "==> Installing dshimv into /opt/wysdemd/dshimv"
 
-wget -M https://raw.githubusercontent.com/embolalia/dshimv/master/dshimv -O dshimv
+wget -N https://raw.githubusercontent.com/embolalia/dshimv/master/dshimv -O dshimv
 chmod 777 dshimv
 cp -f dshimv /opt/wysdemd/dshimv
 chmod 777 /opt/wysdemd/dshimv
 
+echo "==> Installing wysdemd boot order scripts"
 
+install -Dm777 funcs.py /opt/wysdemd/funcs.py
+install -Dm777 bootorder.py /opt/wysdemd/bootorder.py
+
+
+echo "==> Installing wysdemd rsyslog rules"
+install -Dm644 wysdemd.conf /etc/rsyslog.d/wysdemd.conf

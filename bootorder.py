@@ -172,17 +172,17 @@ process_targets(default_target, default_target)
 
 #pprint.pprint(dicts(boot_targets))
 
-print "BOOT TARGETS:"
-pprint.pprint(dicts(boot_targets))
+#print "BOOT TARGETS:"
+#pprint.pprint(dicts(boot_targets))
 # print boot_targets
 
-print "ALL BOOT TARGETS:"
-print all_boot_targets
+#print "ALL BOOT TARGETS:"
+#print all_boot_targets
 
-print "BOOT SERVICES:"
-pprint.pprint(boot_services)
+#print "BOOT SERVICES:"
+#pprint.pprint(boot_services)
 
-print "SORTED BOOT SERVICES:"
+#print "SORTED BOOT SERVICES:"
 print (' '.join( toposort2(boot_services) ))
 
 #boot_targets = new Tree()

@@ -20,11 +20,11 @@ custom_poll()    { default_poll    "$@"; }
 
 on_boot() {
     echo " wysdemd     ____       "
-    echo " .||,       /_ _\\      "
-    echo "\.  ./      |^L^| |     "
-    echo "=    =      | - | L     "
-    echo "/ || \    ,-,\"/  |     "
-    echo "  ||     /    ^    \    "
+    echo "            /_ _\`¬     "
+    echo "  /\        |^L^| /     "
+    echo "=(++)=      | 0 | L,    "
+    echo "  ||      ,-'\ /'-, \,  "
+    echo "  ||     /    '    \ |  "
 
     echo "---"
     
@@ -78,21 +78,25 @@ on_boot() {
     echo_color 3 starting network...
     /etc/init.d/network start
 
+    # start the syslog daemon
+    echo_color 3 starting syslog...
+    python /opt/wysdemd/dshimv /lib/systemd/system/rsyslog.service start
+    
     echo_color 3 starting daemons...
-    #for dmn in $ENABLED; do
-    #    if [ $(echo $dmn | awk '{ s=substr($0, 1, 1); print s; }') = '@' ]; then
-    #        custom_start $(echo $dmn | awk '{ s=substr($0, 2); print s; }') &
-    #    else
-    #        custom_start "$dmn"
-    #    fi
-    #done
+    for dmn in `python /opt/wysdemd/bootorder.py`; do
+        logger -s -p local7.notice "I am starting $dmn now!"
+        /usr/bin/python /opt/wysdemd/dshimv /lib/systemd/system/$dmn start
+    done
 }
 
 on_shutdown() {
     #===================
     # stop the default daemons
     echo_color 3 stopping daemons...
-    custom_stop all
+    for dmn in `python /opt/wysdemd/bootorder.py | tr ' ' '\n' | tac | tr '\n' ' '`; do
+        logger -s -p local7.notice "I am stopping $dmn now!"
+        /usr/bin/python /opt/wysdemd/dshimv /lib/systemd/system/$dmn stop
+    done
 
     #===================
     # load minirc.local.shutdown
