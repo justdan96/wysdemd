@@ -10,6 +10,8 @@ from types import StringType
 import tempfile
 import re
 import pprint
+import pwd
+import grp
 
 try:
     from functools import reduce
@@ -21,6 +23,53 @@ except:
 # subroutine section
 # 
 # -------------------------------------------
+
+def start_service(fil):
+    config, prog, is_service = create_config(fil)
+    
+    environ = os.environ.copy()
+    
+    if config == 1:
+        # print 'Error initialising target file: ' + fil
+        return [1,1]
+	
+    if config.has_option("Service", "ExecStart"):
+        echo "We can start with this command: "
+        if config.has_option("Service", "ExecStartPre"):
+            prestart = config.get("Service", "ExecStartPre")[0]
+            prestartaction = os.path.expandvars(prestart)
+            prestartaction = shlex.split(prestartaction, comments=True)
+            
+            proc = subprocess.Popen(prestartaction, env=environ, preexec_fn=set_usr_grp(config))
+
+            
+    else:
+        echo "No way to start the service!"
+        return
+        
+def set_usr_grp(config):
+    def set_ids():
+        if config.has_option("Service", "User"):
+            user = config.get("Service", "User")[0]
+            if user.isdigit():
+                pwd_entry = pwd.getpwuid(user)
+            else:
+                pwd_entry = pwd.getpwnam(user)
+            environ['HOME'] = pwd_entry.pw_dir
+            environ['LOGNAME'] = pwd_entry.pw_name
+            environ['USER'] = pwd_entry.pw_name
+            environ['SHELL'] = pwd_entry.pw_shell
+            os.setuid(pwd_entry.pw_uid)
+            
+        if config.has_option("Service", "Group"):
+            group = config.get("Service", "Group")[0]
+            if group:
+                grp_entry = grp.getgrgid(int(group))
+            else:
+                grp_entry = grp.getgrgid(pwd_entry.pw_gid)
+            os.setgid(grp_entry.gr_gid)
+    
+    return set_ids
 
 def read_require_fields_from_target_file(fil):
     config, prog, is_service = create_config(fil)
