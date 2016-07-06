@@ -83,10 +83,7 @@ on_boot() {
     python /opt/wysdemd/dshimv /lib/systemd/system/rsyslog.service start
     
     echo_color 3 starting daemons...
-    for dmn in `python /opt/wysdemd/bootorder.py`; do
-        logger -s -p local7.notice "I am starting $dmn now!"
-        /usr/bin/python /opt/wysdemd/dshimv /lib/systemd/system/$dmn start
-    done
+    python /opt/wysdemd/bootorder.py start
 }
 
 on_shutdown() {

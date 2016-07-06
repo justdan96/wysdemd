@@ -3,6 +3,45 @@
 import ConfigParser
 import sys, os, tempfile, re, collections
 from types import StringType
+import syslog
+
+class FakeSecHead(object):
+    def __init__(self, fp):
+        self.fp = fp
+        self.sechead = '[asection]\n'
+
+    def readline(self):
+        if self.sechead:
+            try: 
+                return self.sechead
+            finally: 
+                self.sechead = None
+        else: 
+            return self.fp.readline()
+            return self.fp.readline()
+
+# parse an environment file, adding the variables into the referenced environment and returning the new one
+def parse_envfile(efile, environ):
+    efilec = ConfigParser.RawConfigParser()
+    efilec.optionxform = str
+    try:
+        efilec.readfp(FakeSecHead(open(efile)))
+    except:
+        wyslog("error reading environment file " + efile)
+        return environ
+    
+    for option in efilec.options('asection'):
+        environ[option] = efilec.get('asection', option)
+    return environ
+
+def wyslog(msg, lvl=None):
+    if lvl is None:
+        lvl = syslog.LOG_INFO
+    elif lvl == 'err':
+        lvl = syslog.LOG_ERR
+    
+    syslog.openlog(ident='warlock',facility=syslog.LOG_LOCAL7)
+    syslog.syslog(lvl, msg)
 
 class newdict(dict):
     def __setitem__(self, key, value):
@@ -15,7 +54,7 @@ class newdict(dict):
                 temp_list.append(value)
                 value = temp_list
             dict.__setitem__(self, key, value)
-
+            
 def tree(): return collections.defaultdict(tree)
 
 def dicts(t): return {k: dicts(t[k]) for k in t}
@@ -53,7 +92,7 @@ def create_config(fil):
     if not os.path.isfile(fil):
         fil = fil.replace("/etc/", "/lib/")
         if not os.path.isfile(fil):
-           # print "Cannot find file!"
+           wyslog("Cannot find file! " + fil)
            return [1,1,1]
            
     prog = (fil.split('/')[-1]).split('.')[0]
@@ -93,16 +132,16 @@ def check_for_specifiers(fil, config, prog):
         template_file = 1
 
         if len(prog.split('@')[1]) == 0:
-            print "[WARNING] No instance name specified: Generated script may not be correct"
+            wyslog("[WARNING] No instance name specified: Generated script may not be correct: " + fil)
             return 1
 
         else:
             # This is the value of %i/I
             instance_name = prog.split('@')[1]
-            print instance_name
+            #print instance_name
             # This is the value of %p/P
             prefix_name = prog.split('@')[0]
-            print prefix_name
+            #print prefix_name
     else:
         template_file = 0
 
@@ -120,7 +159,7 @@ def check_for_specifiers(fil, config, prog):
         config.readfp(conf_new_fd)
 
     except Exception, err:
-        print "Error:%s" % (str(err))
+        wyslog("Error:%s" % (str(err)))
         return 1
 
     return check_for_service(config)

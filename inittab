@@ -6,7 +6,7 @@
 # you placed the rc-script at.
 
 # Start "rc init" on boot
-::sysinit:/sbin/rc init
+::sysinit:/opt/wysdemd/rc.py
 
 # Set up the TTY's 1 through 4
 tty1::askfirst:/sbin/agetty -8 -s 38400 tty1 linux
